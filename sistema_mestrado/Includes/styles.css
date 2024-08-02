@@ -1,0 +1,48 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f8f9fa;
+}
+
+.panel {
+    margin-bottom: 20px;
+}
+
+.panel-heading {
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.navbar {
+    margin-bottom: 20px;
+}
+
+
+.login-container {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.form-control:focus {
+    box-shadow: none;
+    border-color: #007bff;
+}
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+.logo {
+    display: block;
+    margin: 0 auto 20px;
+    width: 100px; /* Ajuste o tamanho da logo conforme necessário */
+}
