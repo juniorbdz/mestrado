@@ -3,20 +3,34 @@ session_start();
 include 'classes/Database.php';
 include 'classes/Usuario.php';
 
-if (!isset($_SESSION['tipo'])) {
-    header("Location: login.php");
-    exit;
-}
-
 try {
     $database = new Database();
     $pdo = $database->getConnection();
     $usuario = new Usuario($pdo);
 
-    // Verifica o tipo de usuário
-    $tipo_usuario = $_SESSION['tipo'];
+    // Verifica se o usuário está logado e define o tipo de usuário
+    if (!$usuario->isLoggedIn()) {
+        header("Location: login.php");
+        exit;
+    }
+    
+    $tipo_usuario = $usuario->getTipoUsuario();
+    
+    // Verifica se o tipo de usuário foi definido
+    if (!$tipo_usuario) {
+        // Redireciona ou mostra uma mensagem de erro se o tipo de usuário não estiver definido
+        die("Erro: Tipo de usuário não definido.");
+    }
 
-    // Obtenha dados necessários com base no tipo de usuário, se necessário
+    // Exemplos de funções para obter informações adicionais
+    $total_alunos = $usuario->contarUsuariosPorTipo('aluno');
+    $total_orientadores = $usuario->contarUsuariosPorTipo('orientador');
+    $total_cursos = $usuario->contarCursos();
+    $total_cursos_online = $usuario->contarCursosPorTipo('online');
+    $total_cursos_presenciais = $usuario->contarCursosPorTipo('presencial');
+    $total_orientadores_com_orientandos = $usuario->contarOrientadores()['orientadores_com_orientandos'];
+    $total_orientadores_sem_orientandos = $usuario->contarOrientadores()['total_orientadores'] - $total_orientadores_com_orientandos;
+    
 } catch (PDOException $e) {
     $mensagem = "Erro: " . $e->getMessage();
 }
@@ -25,87 +39,88 @@ try {
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php include 'includes/header.php'; ?>
     <title>Painel de Controle</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .navbar {
-            margin-bottom: 20px;
-        }
-        .container {
-            margin-top: 80px;
-        }
-        .dashboard-panel {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .footer {
-            background: #f1f1f1;
-            padding: 10px;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-        <a class="navbar-brand" href="#">Sistema de Mestrado</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php?dashboard=admin">Início</a>
-                </li>
-                <?php if ($tipo_usuario == 'administrador'): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="add_user.php">Adicionar Usuário</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="add_orientador.php">Adicionar Orientador</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="add_aluno.php">Adicionar Aluno</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="add_curso.php">Adicionar Curso</a>
-                    </li>
-                <?php endif; ?>
-                <li class="nav-item">
-                    <a class="nav-link btn btn-danger text-white" href="logout.php">Sair</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
+    <?php include 'includes/navbar.php'; ?>
 
-    <div class="container">
-        <div class="dashboard-panel">
-            <h3>Painel de Controle</h3>
-            <!-- Adicione aqui o conteúdo do painel de controle com base no tipo de usuário -->
+    <div class="container mt-4">
+        <div class="content">
             <?php if ($tipo_usuario == 'administrador'): ?>
-                <p>Quantidade de alunos: <!-- Código para exibir quantidade de alunos --></p>
-                <p>Quantidade de orientadores: <!-- Código para exibir quantidade de orientadores --></p>
-                <p>Quantidade de cursos: <!-- Código para exibir quantidade de cursos --></p>
-                <p>Quantidade de cursos por tipo: <!-- Código para exibir quantidade de cursos por tipo --></p>
-                <p>Orientadores com orientandos: <!-- Código para exibir quantidade de orientadores com orientandos --></p>
-                <p>Orientadores ociosos: <!-- Código para exibir quantidade de orientadores ociosos --></p>
+                <div class="admin-dashboard">
+                    <h2>Painel do Administrador</h2>
+                    <div class="card-deck">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Total de Alunos</h5>
+                                <p class="card-text"><?php echo $total_alunos; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Total de Orientadores</h5>
+                                <p class="card-text"><?php echo $total_orientadores; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Total de Cursos</h5>
+                                <p class="card-text"><?php echo $total_cursos; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Cursos Online</h5>
+                                <p class="card-text"><?php echo $total_cursos_online; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Cursos Presenciais</h5>
+                                <p class="card-text"><?php echo $total_cursos_presenciais; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Orientadores com Orientandos</h5>
+                                <p class="card-text"><?php echo $total_orientadores_com_orientandos; ?></p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">Orientadores Ociosos</h5>
+                                <p class="card-text"><?php echo $total_orientadores_sem_orientandos; ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php elseif ($tipo_usuario == 'orientador'): ?>
+                <div class="orientador-dashboard">
+                    <h2>Painel do Orientador</h2>
+                    <ul>
+                        <li><a href="schedule_appointments.php">Agendar Orientação</a></li>
+                        <!-- Outros links e funcionalidades para orientadores -->
+                    </ul>
+                </div>
+            <?php elseif ($tipo_usuario == 'aluno'): ?>
+                <div class="aluno-dashboard">
+                    <h2>Painel do Aluno</h2>
+                    <ul>
+                        <li><a href="add_activity.php">Adicionar Atividade</a></li>
+                        <!-- Outros links e funcionalidades para alunos -->
+                    </ul>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-warning">
+                    Tipo de usuário desconhecido. Por favor, entre em contato com o suporte.
+                </div>
             <?php endif; ?>
         </div>
     </div>
 
-    <div class="footer">
-        <p>&copy; 2024 Sistema de Mestrado. Todos os direitos reservados.</p>
-    </div>
+    <?php include 'includes/footer.php'; ?>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="includes/script.js"></script>
 </body>
 </html>
